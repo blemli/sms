@@ -9,8 +9,8 @@
 ### Usage
 
 ```bash
-curl "https://sms.problem.li/send?key=YOUR_KEY&to=0791234567&msg=Hello"
-curl "https://sms.problem.li/up"  # Health check
+curl -L "https://sms.problem.li/send?key=YOUR_KEY&to=0791234567&msg=Hello"
+curl -L "https://sms.problem.li/up"  # Health check
 ```
 
 
