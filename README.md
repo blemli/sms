@@ -24,6 +24,7 @@ curl -L "https://sms.problem.li/up"  # Health check
   - Global: 5000/day
   - Roaming is blocked
   - max 70 Characters per Message
+  - ONLY GSM Characters
 
 
 

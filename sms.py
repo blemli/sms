@@ -5,6 +5,9 @@ from flask_limiter import Limiter
 from collections import defaultdict
 
 SERIAL_PORT, BAUD, TIMEOUT = "/dev/serial0", 115200, 10
+GSM7 = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1b\x1c\x1d\x1e\x1f !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà"
+GSM7_EXT = {'^': 0x14, '{': 0x28, '}': 0x29, '\\': 0x2F, '[': 0x3C, '~': 0x3D, ']': 0x3E, '|': 0x40, '€': 0x65}
+GSM7_SET = set(GSM7) | set(GSM7_EXT.keys())
 ser, ser_lock, provider = None, threading.Lock(), "unknown"
 app = flask.Flask(__name__)
 dedup, recipient_hits = {}, defaultdict(list)
@@ -34,14 +37,24 @@ def get_signal():
     m = re.search(r"\+CSQ:\s*(\d+)", modem_cmd("AT+CSQ", 0.5))
     return int(m.group(1)) if m else -1
 
+def gsm_encode(msg):
+    out = []
+    for c in msg:
+        if c in GSM7_EXT:
+            out.extend([0x1B, GSM7_EXT[c]])
+        else:
+            out.append(GSM7.index(c))
+    return bytes(out)
+
 def send_sms(to, msg):
     with ser_lock:
         ser.write(b'\x1b'); time.sleep(0.1)  # ESC to cancel any pending
         ser.reset_input_buffer()
         ser.write(b'AT+CMGF=1\r\n'); time.sleep(0.3)
+        ser.write(b'AT+CSCS="GSM"\r\n'); time.sleep(0.3)
         ser.reset_input_buffer()
         ser.write(f'AT+CMGS="{to}"\r\n'.encode()); time.sleep(0.5)
-        ser.write(f'{msg}\x1a'.encode()); time.sleep(3)
+        ser.write(gsm_encode(msg) + b'\x1a'); time.sleep(3)
         res = ser.read(ser.in_waiting).decode(errors="ignore")
         return "OK" in res or "+CMGS" in res
 
@@ -84,6 +97,7 @@ def send():
     if is_blacklisted(to): return "number blacklisted", 403
     if len(msg) > 70: return "message too long (max 70)", 400
     if not msg: return "empty message", 400
+    if not all(c in GSM7_SET for c in msg): return "invalid characters (no emojis)", 400
     dedup_key = hashlib.md5(f"{to}{msg}".encode()).hexdigest()
     if dedup_key in dedup and time.time() - dedup[dedup_key] < 60: return "duplicate", 429
     if not check_recipient_limit(to): return "recipient limit exceeded", 429
