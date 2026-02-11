@@ -5,9 +5,8 @@ from flask_limiter import Limiter
 from collections import defaultdict
 
 SERIAL_PORT, BAUD, TIMEOUT = "/dev/serial0", 115200, 10
-GSM7 = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1b\x1c\x1d\x1e\x1f !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà"
-GSM7_EXT = {'^': 0x14, '{': 0x28, '}': 0x29, '\\': 0x2F, '[': 0x3C, '~': 0x3D, ']': 0x3E, '|': 0x40, '€': 0x65}
-GSM7_SET = set(GSM7) | set(GSM7_EXT.keys())
+GSM7_TABLE = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x00\x00\x00\x00\x00 !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà"
+GSM7 = {c: i for i, c in enumerate(GSM7_TABLE) if c != '\x00'}
 ser, ser_lock, provider = None, threading.Lock(), "unknown"
 app = flask.Flask(__name__)
 dedup, recipient_hits = {}, defaultdict(list)
@@ -38,13 +37,7 @@ def get_signal():
     return int(m.group(1)) if m else -1
 
 def gsm_encode(msg):
-    out = []
-    for c in msg:
-        if c in GSM7_EXT:
-            out.extend([0x1B, GSM7_EXT[c]])
-        else:
-            out.append(GSM7.index(c))
-    return bytes(out)
+    return bytes(GSM7[c] for c in msg)
 
 def send_sms(to, msg):
     with ser_lock:
@@ -97,7 +90,7 @@ def send():
     if is_blacklisted(to): return "number blacklisted", 403
     if len(msg) > 70: return "message too long (max 70)", 400
     if not msg: return "empty message", 400
-    if not all(c in GSM7_SET for c in msg): return "invalid characters (no emojis)", 400
+    if not all(c in GSM7 for c in msg): return "invalid characters (no emojis)", 400
     dedup_key = hashlib.md5(f"{to}{msg}".encode()).hexdigest()
     if dedup_key in dedup and time.time() - dedup[dedup_key] < 60: return "duplicate", 429
     if not check_recipient_limit(to): return "recipient limit exceeded", 429
