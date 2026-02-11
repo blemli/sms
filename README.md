@@ -2,6 +2,8 @@
 
 *just send sms*
 
+built in under 6h :)
+
 <img src="./sms.svg" style="zoom:25%;" />
 
   
@@ -18,7 +20,7 @@ curl -L "https://sms.problem.li/up"  # Health check
 ## Limits
 
   - Per key: 100/min, 1000/day
-  - Per recipient: 5/min, 50/day
+  - Per recipient: 7/min, 40/day
   - Global: 5000/day
   - Roaming is blocked
   - max 70 Characters per Message
@@ -129,3 +131,10 @@ sudo service sms restart
 >
 > make sure to save the key in 1password and send it only via [kpaste](kpaste.infomaniak.ch)
 
+ ### Reset Rate Limits
+
+ Rate limits are stored in memory. Restart the service to reset all limits:
+
+ ```bash
+ sudo service sms restart
+ ```

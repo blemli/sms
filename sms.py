@@ -56,7 +56,7 @@ def check_recipient_limit(num):
     recipient_hits[num] = [t for t in hits if now - t < 86400]
     day_hits = recipient_hits[num]
     min_hits = [t for t in day_hits if now - t < 60]
-    if len(min_hits) >= 5 or len(day_hits) >= 50: return False
+    if len(min_hits) >= 7 or len(day_hits) >= 40: return False
     recipient_hits[num].append(now)
     return True
 
