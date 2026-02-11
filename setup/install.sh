@@ -1,6 +1,9 @@
 set -e
 name=$(basename $(git rev-parse --show-toplevel))
 
+echo "~~~ try to stop service~~~"
+sudo service $name stop || true
+
 echo "~~~ install service ~~~~"
 sudo cp -f setup/$name.service /lib/systemd/system/$name.service
 sudo chmod 644 /lib/systemd/system/$name.service
