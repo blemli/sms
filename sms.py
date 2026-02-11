@@ -24,7 +24,7 @@ log = logging.getLogger("sms"); log.addHandler(handler); log.setLevel(logging.IN
 
 # Rate limiter (per-key)
 limiter = Limiter(key_func=lambda: flask.request.args.get("key", ""), app=app)
-send_limit = limiter.limit("100/minute;1000/day")
+send_limit = limiter.limit("7/minute;1000/day")
 
 def modem_cmd(cmd, wait=1):
     with ser_lock:
