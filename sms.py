@@ -4,7 +4,7 @@ from logging.handlers import TimedRotatingFileHandler
 from flask_limiter import Limiter
 from collections import defaultdict
 
-SERIAL_PORT, BAUD, TIMEOUT = "/dev/ttyUSB2", 115200, 10
+SERIAL_PORT, BAUD, TIMEOUT = "/dev/serial0", 115200, 10
 app = flask.Flask(__name__)
 dedup, recipient_hits = {}, defaultdict(list)
 day_count, day_start = [0], [time.time()]
@@ -20,7 +20,7 @@ handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
 log = logging.getLogger("sms"); log.addHandler(handler); log.setLevel(logging.INFO)
 
 # Rate limiter (per-key)
-limiter = Limiter(flask.g, app=app, key_func=lambda: flask.request.args.get("key", ""))
+limiter = Limiter(key_func=lambda: flask.request.args.get("key", ""), app=app)
 send_limit = limiter.limit("100/minute;1000/day")
 
 def modem_cmd(cmd, wait=1):
