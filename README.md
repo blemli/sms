@@ -116,3 +116,10 @@ minicom -D /dev/serial0
 | `AT+CMGS="+41..."` | Send SMS, then type msg, end with Ctrl+Z | `+CMGS: <id>`               |
 
   Exit minicom: Ctrl+A then X
+
+### Update
+
+```bash
+setup/update.sh
+```
+
