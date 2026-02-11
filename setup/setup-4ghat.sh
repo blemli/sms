@@ -26,6 +26,3 @@ echo "  AT+CMGS=\"+41791234567\""
 echo "  Hello World<Ctrl+Z>"
 
 echo "~~~ Reboot required for serial changes ~~~"
-read -p "Reboot now? [y/N] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then sudo reboot; fi
