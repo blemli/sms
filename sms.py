@@ -31,9 +31,10 @@ def modem_cmd(cmd, wait=1):
         return ser.read(ser.in_waiting).decode(errors="ignore")
 
 def send_sms(to, msg):
-    modem_cmd(f'AT+CMGF=1', 0.5)  # Text mode
+    modem_cmd('AT+CMGF=1', 0.5)
     modem_cmd(f'AT+CMGS="{to}"', 0.5)
-    res = modem_cmd(f'{msg}\x1a', 5)  # Ctrl+Z to send
+    res = modem_cmd(f'{msg}\x1a', 5)
+    print(f"DEBUG: modem response: {repr(res)}")
     return "OK" in res or "+CMGS" in res
 
 def normalize(num):
