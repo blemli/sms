@@ -8,3 +8,4 @@ sudo chmod +x setup/*.sh
 . setup/install.sh
 #. setup/install-$name-admin.sh
 sudo service avahi-daemon restart
+sudo systemctl restart caddy
