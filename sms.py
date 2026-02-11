@@ -5,7 +5,7 @@ from flask_limiter import Limiter
 from collections import defaultdict
 
 SERIAL_PORT, BAUD, TIMEOUT = "/dev/serial0", 115200, 10
-ser, ser_lock = None, threading.Lock()
+ser, ser_lock, provider = None, threading.Lock(), "unknown"
 app = flask.Flask(__name__)
 dedup, recipient_hits = {}, defaultdict(list)
 day_count, day_start = [0], [time.time()]
@@ -29,6 +29,10 @@ def modem_cmd(cmd, wait=1):
         ser.reset_input_buffer()
         ser.write(f"{cmd}\r\n".encode()); time.sleep(wait)
         return ser.read(ser.in_waiting).decode(errors="ignore")
+
+def get_signal():
+    m = re.search(r"\+CSQ:\s*(\d+)", modem_cmd("AT+CSQ", 0.5))
+    return int(m.group(1)) if m else -1
 
 def send_sms(to, msg):
     with ser_lock:
@@ -86,18 +90,23 @@ def send():
     if not check_global_limit(): return "global limit exceeded", 429
     dedup[dedup_key] = time.time()
     dedup.update({k: v for k, v in dedup.items() if time.time() - v < 60})  # Cleanup
+    signal = get_signal()
     if not send_sms(to, msg):
-        log.info(f"FAIL {keys[key]} {to} {msg[:20]}...")
+        log.info(f"FAIL {keys[key]} {to} [{provider}/{signal}] {msg[:20]}...")
         return "send failed", 500
-    log.info(f"OK {keys[key]} {to} {msg[:20]}...")
+    log.info(f"OK {keys[key]} {to} [{provider}/{signal}] {msg[:20]}...")
     return "sent", 200
 
 def init_modem():
-    global ser
+    global ser, provider
     ser = serial.Serial(SERIAL_PORT, BAUD, timeout=TIMEOUT)
     ser.write(b'\x1b'); time.sleep(0.1)  # ESC to cancel any pending
     ser.reset_input_buffer()
-    return "OK" in modem_cmd("AT")
+    if "OK" not in modem_cmd("AT"):
+        return False
+    m = re.search(r'\+COPS:\s*\d+,\d+,"([^"]+)"', modem_cmd("AT+COPS?", 0.5))
+    provider = m.group(1) if m else "unknown"
+    return True
 
 if __name__ == "__main__":
     if not init_modem(): print("Modem not responding"); exit(1)
