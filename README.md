@@ -15,12 +15,13 @@ curl "https://sms.problem.li/up"  # Health check
 
 
 
-## Rate Limits
+## Limits
 
   - Per key: 100/min, 1000/day
   - Per recipient: 5/min, 50/day
   - Global: 5000/day
   - Roaming is blocked
+  - max 70 Characters per Message
 
 
 
@@ -38,14 +39,6 @@ On Raspberry Pi 4:
 
 1. mount the 4G HAT
 
-   > [!TIP]
-   >
-   > test with 
-   >
-   > ```bash
-   > minicom -D /dev/ttyUSB2 -b 115200
-   > ```
-
 2. set project 
 
    ```bash
@@ -55,7 +48,7 @@ On Raspberry Pi 4:
 3. create Installation directory
 
    ```bash
-   sudo mkdir /opt/$PROJECT && sudo chown -c pi /opt/$PROJECT
+   sudo mkdir /opt/$PROJECT && sudo chown -cR pi /opt/$PROJECT
    ```
 
 4. clone code
@@ -84,7 +77,7 @@ On Raspberry Pi 4:
 
    ```bash
    sudo apt install vim
-   echo "DUCK_TOKEN=608f514e-ca03-4839-8135-3e58c661e608">>.env
+   echo "DUCK_TOKEN=xxxx">>.env
    ```
 
 7. run setup
@@ -117,9 +110,22 @@ minicom -D /dev/serial0
 
   Exit minicom: Ctrl+A then X
 
-### Update
+### Update Code
 
 ```bash
 setup/update.sh
 ```
+
+### Add API-Key
+
+```bash
+name=xyz
+key=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+echo "$name $key">>keys.dic
+sudo service sms restart
+```
+
+> [!IMPORTANT]
+>
+> make sure to save the key in 1password and send it only via [kpaste](kpaste.infomaniak.ch)
 
