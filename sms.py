@@ -26,6 +26,7 @@ send_limit = limiter.limit("100/minute;1000/day")
 
 def modem_cmd(cmd, wait=1):
     with ser_lock:
+        ser.reset_input_buffer()
         ser.write(f"{cmd}\r\n".encode()); time.sleep(wait)
         return ser.read(ser.in_waiting).decode(errors="ignore")
 
