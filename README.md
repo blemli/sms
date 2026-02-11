@@ -8,7 +8,7 @@ built in under 6h :)
 
   
 
-### Usage
+## Usage
 
 ```bash
 curl -L "https://sms.problem.li/send?key=YOUR_KEY&to=0791234567&msg=Hello"
@@ -19,12 +19,12 @@ curl -L "https://sms.problem.li/up"  # Health check
 
 ## Limits
 
-  - Per key: 100/min, 1000/day
+  - Per key: 7/min, 1000/day
   - Per recipient: 7/min, 40/day
   - Global: 5000/day
-  - Roaming is blocked
+  - Roaming and premium numbers are blocked
   - max 70 Characters per Message
-  - ONLY GSM Characters
+  - ONLY GSM7 Characters
 
 
 
@@ -32,7 +32,7 @@ curl -L "https://sms.problem.li/up"  # Health check
 
   Internet → Caddy (443/HTTPS) → Flask (8080) → Serial → [SIM7600E-H 4G HAT](https://www.waveshare.com/wiki/SIM7600E-H_4G_HAT)  → SMS
                   ↑
-          sms.problem.li → CNAME → sms-problemli.duckdns.org → Pi IP
+          sms.problem.li → CNAME → sms-problemli.duckdns.org → Raspberry Pi IP
 
 
 
@@ -40,7 +40,7 @@ curl -L "https://sms.problem.li/up"  # Health check
 
 On Raspberry Pi 4:
 
-1. mount the 4G HAT
+1. mount the  [SIM7600E-H 4G HAT](https://www.waveshare.com/wiki/SIM7600E-H_4G_HAT), connect the antenna to *MAIN*, set jumpers A+B to UART mode
 
 2. set project 
 
@@ -91,6 +91,10 @@ On Raspberry Pi 4:
 
 
 
+> [!CAUTION]
+>
+> Make sure roaming and premium numbers are blocked on the provider level
+
 
 
 ## Maintenance
@@ -139,3 +143,20 @@ sudo service sms restart
  ```bash
  sudo service sms restart
  ```
+
+
+
+## improvements
+
+- test what happens if provider rejects message
+- allow for 160 chars now that all the weird characters are blocked?
+- test foreign numbers in swiss network (should work)
+- replace swiss.dic with prefixes.dic to make more universal 
+- remove blacklist since its blocked at provider level
+- factor out all the modem code...
+- don't lose the rate limits on service restart
+- add json/headers support
+- add bruno tests
+- Load Balancing with multiple pis :)
+- rebrand to smsli
+
