@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-import flask, serial, time, re, hashlib, logging
+import flask, serial, time, re, hashlib, logging, threading
 from logging.handlers import TimedRotatingFileHandler
 from flask_limiter import Limiter
 from collections import defaultdict
 
 SERIAL_PORT, BAUD, TIMEOUT = "/dev/serial0", 115200, 10
+ser, ser_lock = None, threading.Lock()
 app = flask.Flask(__name__)
 dedup, recipient_hits = {}, defaultdict(list)
 day_count, day_start = [0], [time.time()]
@@ -24,9 +25,9 @@ limiter = Limiter(key_func=lambda: flask.request.args.get("key", ""), app=app)
 send_limit = limiter.limit("100/minute;1000/day")
 
 def modem_cmd(cmd, wait=1):
-    with serial.Serial(SERIAL_PORT, BAUD, timeout=TIMEOUT) as s:
-        s.write(f"{cmd}\r\n".encode()); time.sleep(wait)
-        return s.read(s.in_waiting).decode(errors="ignore")
+    with ser_lock:
+        ser.write(f"{cmd}\r\n".encode()); time.sleep(wait)
+        return ser.read(ser.in_waiting).decode(errors="ignore")
 
 def send_sms(to, msg):
     modem_cmd(f'AT+CMGF=1', 0.5)  # Text mode
@@ -85,7 +86,11 @@ def send():
     log.info(f"OK {keys[key]} {to} {msg[:20]}...")
     return "sent", 200
 
+def init_modem():
+    global ser
+    ser = serial.Serial(SERIAL_PORT, BAUD, timeout=TIMEOUT)
+    return "OK" in modem_cmd("AT")
+
 if __name__ == "__main__":
-    if "OK" not in modem_cmd("AT"): print("Modem not responding"); exit(1)
-    print("Modem OK, starting server...")
-    app.run(host="0.0.0.0", port=8080)
+    if not init_modem(): print("Modem not responding"); exit(1)
+    print("Modem OK, starting server..."); app.run(host="0.0.0.0", port=8080)
