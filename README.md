@@ -83,7 +83,8 @@ On Raspberry Pi 4:
 6. add duckdns token to .env
 
    ```bash
-   echo "DUCK_TOKEN=xxxxx">>.env
+   sudo apt install vim
+   echo "DUCK_TOKEN=608f514e-ca03-4839-8135-3e58c661e608">>.env
    ```
 
 7. run setup
