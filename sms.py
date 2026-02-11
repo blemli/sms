@@ -31,11 +31,13 @@ def modem_cmd(cmd, wait=1):
         return ser.read(ser.in_waiting).decode(errors="ignore")
 
 def send_sms(to, msg):
-    modem_cmd('AT+CMGF=1', 0.5)
-    modem_cmd(f'AT+CMGS="{to}"', 0.5)
-    res = modem_cmd(f'{msg}\x1a', 5)
-    print(f"DEBUG: modem response: {repr(res)}")
-    return "OK" in res or "+CMGS" in res
+    with ser_lock:
+        ser.reset_input_buffer()
+        ser.write(b'AT+CMGF=1\r\n'); time.sleep(0.3)
+        ser.write(f'AT+CMGS="{to}"\r\n'.encode()); time.sleep(0.3)
+        ser.write(f'{msg}\x1a'.encode()); time.sleep(3)
+        res = ser.read(ser.in_waiting).decode(errors="ignore")
+        return "OK" in res or "+CMGS" in res
 
 def normalize(num):
     num = re.sub(r"[\s\-\(\)]", "", num)
