@@ -14,15 +14,8 @@ sudo apt install -y minicom
 echo "~~~ Add user to dialout group ~~~"
 sudo usermod -aG dialout pi
 
-echo "~~~ Create udev rule for consistent device naming ~~~"
-cat << 'EOF' | sudo tee /etc/udev/rules.d/99-sim7600.rules
-# SIM7600E-H 4G HAT USB serial ports
-SUBSYSTEM=="tty", ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9001", SYMLINK+="sim7600_%n"
-EOF
-sudo udevadm control --reload-rules
-
 echo "~~~ Test modem (after reboot) ~~~"
-echo "Run: minicom -D /dev/ttyUSB2 -b 115200"
+echo "Run: minicom -D /dev/serial0 -b 115200"
 echo "Type: AT (should respond OK)"
 echo "Type: AT+CPIN? (check SIM status)"
 echo "Type: AT+CSQ (signal strength, 10-31 is good)"
