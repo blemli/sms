@@ -1,0 +1,95 @@
+NAME="sms"
+DESCRIPTION="just send sms"
+
+echo "~~~ make installation stuff executable ~~~"
+sudo chmod +x setup/*.sh
+
+echo "~~~ turn off swapping to preserve sdcards ~~~"
+sudo swapoff --all                            # swapping is stupid anyways
+sudo apt autoremove -y --purge dphys-swapfile # and then we dont need the swapfile anymore
+#todo: noatime
+
+echo "~~~ add convenience aliases ~~~"
+echo "alias restart='sudo service $NAME restart && sudo service avahi-daemon restart'" >> ~/.bash_profile
+echo "alias follow='journalctl -u $NAME --follow'" >> ~/.bash_profile
+echo "alias errors='journalctl -u $NAME -b -p emerg..err'" >> ~/.bash_profile
+echo "alias update='cd /opt/$NAME && setup/update.sh'" >> ~/.bash_profile
+echo "alias status='service $NAME status'" >> ~/.bash_profile
+echo "alias disable='sudo service $NAME stop && sudo systemctl disable $NAME'" >> ~/.bash_profile
+echo "alias enable='sudo systemctl enable $NAME && sudo service start $NAME'" >> ~/.bash_profile
+
+
+echo "~~~ install basic tools ~~~"
+sudo apt install -y dnsutils vim git tldr python3-pip bat tmux iptables
+
+echo "~~~ install specific dependencies ~~~"
+setup/setup-4ghat.sh
+
+
+echo "~~~ disable password login via ssh ~~~"
+#todo
+
+echo "~~~ set custom login banner ~~~"
+sudo apt install -y figlet
+figlet $NAME >>motd
+echo "by Problemli" >>motd
+echo " " >>motd
+echo " >> $DESCRIPTION << " >>motd
+echo " " >>motd
+echo " " >>motd
+echo "   restart: sudo service $NAME restart" >>motd
+echo "   disable: sudo systemctl disable $NAME" >>motd
+echo "   live logs: journalctl -u $NAME --follow" >>motd
+echo "   errors since last boot: journalctl -u $NAME -b -p emerg..err" >>motd
+echo " " >>motd
+echo " " >>motd
+sudo cp -f motd /etc/motd
+rm motd                   # clean up after ourselves
+sudo apt remove -y figlet # clean up after ourselves
+
+echo "~~~ installing iterm integration (without utilities) ~~~"
+curl -L https://iterm2.com/shell_integration/install_shell_integration.sh| bash
+
+echo "~~~ change directory after connecting ~~~"
+echo "cd /opt/$NAME" >> ~/.bash_profile
+echo "source .venv/bin/activate" >> ~/.bash_profile
+
+echo "~~~ install Caddy for HTTPS ~~~"
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install -y caddy
+sudo cp /opt/$NAME/Caddyfile /etc/caddy/Caddyfile
+sudo systemctl enable caddy
+sudo systemctl restart caddy
+
+echo "~~~ setup DuckDNS cron ~~~"
+chmod +x /opt/$NAME/setup/duckdns.sh
+(crontab -l 2>/dev/null | grep -v duckdns; echo "*/5 * * * * /opt/$NAME/setup/duckdns.sh >> /var/log/duckdns.log 2>&1") | crontab -
+/opt/$NAME/setup/duckdns.sh
+
+echo "~~~ avoid writing syslog ~~~"
+sudo mkdir /etc/rsyslog.d
+echo ":programname, isequal, \"$NAME\" stop" | sudo tee -a /etc/rsyslog.d/filter-$NAME.conf
+echo ":programname, isequal, \"$NAME-admin\" stop" | sudo tee -a /etc/rsyslog.d/filter-$NAME-admin.conf
+
+echo "~~~ turn on poe fan only at higher temperatures ~~~"
+echo "# PoE Hat Fan Speeds" | sudo tee -a /boot/config.txt
+echo "dtparam=poe_fan_temp0=60000" | sudo tee -a /boot/config.txt
+echo "dtparam=poe_fan_temp1=70000" | sudo tee -a /boot/config.txt
+echo "dtparam=poe_fan_temp2=80000" | sudo tee -a /boot/config.txt
+echo "dtparam=poe_fan_temp3=90000" | sudo tee -a /boot/config.txt
+
+echo "~~~ install venv ~~~"
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m ensurepip
+
+#curl -LsSf https://astral.sh/uv/install.sh | sh
+#source $HOME/.cargo/env
+#uv venv
+#source .venv/bin/activate
+
+echo "~~~ install  ~~~"
+setup/install.sh
