@@ -32,9 +32,11 @@ def modem_cmd(cmd, wait=1):
 
 def send_sms(to, msg):
     with ser_lock:
+        ser.write(b'\x1b'); time.sleep(0.1)  # ESC to cancel any pending
         ser.reset_input_buffer()
         ser.write(b'AT+CMGF=1\r\n'); time.sleep(0.3)
-        ser.write(f'AT+CMGS="{to}"\r\n'.encode()); time.sleep(0.3)
+        ser.reset_input_buffer()
+        ser.write(f'AT+CMGS="{to}"\r\n'.encode()); time.sleep(0.5)
         ser.write(f'{msg}\x1a'.encode()); time.sleep(3)
         res = ser.read(ser.in_waiting).decode(errors="ignore")
         return "OK" in res or "+CMGS" in res
@@ -93,6 +95,8 @@ def send():
 def init_modem():
     global ser
     ser = serial.Serial(SERIAL_PORT, BAUD, timeout=TIMEOUT)
+    ser.write(b'\x1b'); time.sleep(0.1)  # ESC to cancel any pending
+    ser.reset_input_buffer()
     return "OK" in modem_cmd("AT")
 
 if __name__ == "__main__":
