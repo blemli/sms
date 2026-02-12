@@ -76,6 +76,12 @@ def check_global_limit():
     day_count[0] += 1
     return True
 
+@app.route("/favicon.ico")
+def favicon(): return flask.send_file("static/favicon.ico")
+
+@app.route("/favicon.svg")
+def favicon_svg(): return flask.send_file("static/favicon.svg", mimetype="image/svg+xml")
+
 @app.route("/up")
 def up(): return "OK", 200
 
