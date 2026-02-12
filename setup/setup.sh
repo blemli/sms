@@ -65,9 +65,9 @@ sudo systemctl enable caddy
 sudo systemctl restart caddy
 
 echo "~~~ setup DuckDNS cron ~~~"
-chmod +x /opt/$NAME/setup/duckdns.sh
-(crontab -l 2>/dev/null | grep -v duckdns; echo "*/5 * * * * /opt/$NAME/setup/duckdns.sh >> /var/log/duckdns.log 2>&1") | crontab -
-/opt/$NAME/setup/duckdns.sh
+sudo chmod +x /opt/$NAME/setup/duckdns.sh
+(sudo crontab -l 2>/dev/null | grep -v duckdns; echo "* * * * * /opt/$NAME/setup/duckdns.sh 2>&1 | logger -t duckdns") | sudo crontab -
+sudo /opt/$NAME/setup/duckdns.sh 2>&1 | logger -t duckdns
 
 echo "~~~ avoid writing syslog ~~~"
 sudo mkdir /etc/rsyslog.d

@@ -117,6 +117,13 @@ minicom -D /dev/serial0
 
   Exit minicom: Ctrl+A then X
 
+### DuckDNS Logs
+
+```bash
+journalctl -t duckdns        # all logs
+journalctl -t duckdns -f     # follow live
+```
+
 ### Update Code
 
 ```bash
