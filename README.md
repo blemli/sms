@@ -158,5 +158,5 @@ sudo service sms restart
 - add json/headers support
 - add bruno tests
 - Load Balancing with multiple pis :)
-- rebrand to smsli
+- rebrand to *smsli*
 
